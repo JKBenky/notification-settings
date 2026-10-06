@@ -6,7 +6,7 @@
 
 原型已通过 GitHub Pages 部署，直接访问：
 
-👉 **https://jkbenky.github.io/game-community-notification-design/**
+👉 **https://jkbenky.github.io/notification-settings/**
 
 （也可下载 `index.html` 用浏览器本地打开，效果相同。）
 
