@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>通知设置</title>
+  <style>
+    html { color-scheme: light dark; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+      background: light-dark(#e8eaee, #0b0d10);
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+<div id="notify-settings">
+  <p class="vis-sr-only">游戏社区的通知设置。可分别开关开测提醒、互动和推广，账号安全保持开启。</p>
+  <div class="phone">
+    <header class="bar">
+      <span class="back" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <h1>通知设置</h1>
+      <span class="back-spacer" aria-hidden="true"></span>
+    </header>
+
+    <div class="body">
+      <section class="group" aria-labelledby="sec-master">
+        <div class="row">
+          <div class="copy">
+            <p id="sec-master" class="title">允许通知</p>
+            <p class="sub">关闭后不再弹窗，消息仍留在消息中心。</p>
+          </div>
+          <button type="button" class="switch" data-switch id="allow-push" role="switch" aria-checked="true" aria-labelledby="sec-master">
+            <span class="track"><span class="thumb"></span></span>
+          </button>
+        </div>
+        <p id="push-off-note" class="banner" hidden>系统通知已关闭。开测、安全和互动仍会记在消息中心。</p>
+      </section>
+
+      <section class="group" aria-labelledby="sec-now">
+        <h2 id="sec-now">重要即时</h2>
+        <div class="row">
+          <div class="copy">
+            <p id="lab-test" class="title">关注游戏的开测与更新</p>
+            <p class="sub">仅提醒你预约或关注的游戏。可关闭。</p>
+          </div>
+          <button type="button" class="switch" data-switch role="switch" aria-checked="true" aria-labelledby="lab-test">
+            <span class="track"><span class="thumb"></span></span>
+          </button>
+        </div>
+        <div class="row">
+          <div class="copy">
+            <p id="lab-at" class="title">有人 @ 我</p>
+            <p class="sub">单独推送，不和点赞、评论合并。</p>
+          </div>
+          <button type="button" class="switch" data-switch role="switch" aria-checked="true" aria-labelledby="lab-at">
+            <span class="track"><span class="thumb"></span></span>
+          </button>
+        </div>
+        <div class="row">
+          <div class="copy">
+            <p id="lab-safe" class="title">账号与安全</p>
+            <p class="sub">异常登录、密码和绑定变更。为保障账号，此项保持开启。</p>
+          </div>
+          <button type="button" class="switch" data-switch data-lock="true" role="switch" aria-checked="true" disabled aria-labelledby="lab-safe">
+            <span class="track"><span class="thumb"></span></span>
+          </button>
+        </div>
+      </section>
+
+      <section class="group" aria-labelledby="sec-later">
+        <h2 id="sec-later">社区互动</h2>
+        <div class="row">
+          <div class="copy">
+            <p id="lab-reply" class="title">赞与评论</p>
+            <p class="sub">同一条帖子 1 小时内合并成一条，不逐条弹窗。</p>
+          </div>
+          <button type="button" class="switch" data-switch role="switch" aria-checked="true" aria-labelledby="lab-reply">
+            <span class="track"><span class="thumb"></span></span>
+          </button>
+        </div>
+        <div class="row">
+          <div class="copy">
+            <p id="lab-follow" class="title">关注的人发布新内容</p>
+            <p class="sub">只在消息中心显示红点，不发系统推送。</p>
+          </div>
+          <button type="button" class="switch" data-switch role="switch" aria-checked="true" aria-labelledby="lab-follow">
+            <span class="track"><span class="thumb"></span></span>
+          </button>
+        </div>
+      </section>
+
+      <section class="group" aria-labelledby="sec-promo">
+        <h2 id="sec-promo">平台推广</h2>
+        <div class="row">
+          <div class="copy">
+            <p id="lab-promo" class="title">活动、礼包与内容推荐</p>
+            <p class="sub" id="promo-sub">默认不推送。开启后每周最多 2 条，22:00–8:00 不发送。</p>
+          </div>
+          <button type="button" class="switch" data-switch id="promo-push" role="switch" aria-checked="false" aria-labelledby="lab-promo">
+            <span class="track"><span class="thumb"></span></span>
+          </button>
+        </div>
+        <p class="foot">推广内容留在消息中心的「活动」里，你可以自己打开查看。</p>
+      </section>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var root = document.getElementById("notify-settings");
+  var master = root.querySelector("#allow-push");
+  var notice = root.querySelector("#push-off-note");
+  var promo = root.querySelector("#promo-push");
+  var promoSub = root.querySelector("#promo-sub");
+  var promoOff = "默认不推送。开启后每周最多 2 条，22:00–8:00 不发送。";
+  var promoOn = "已开启。每周最多 2 条，22:00–8:00 不发送。";
+
+  function sync() {
+    var allow = master.getAttribute("aria-checked") === "true";
+    notice.hidden = allow;
+    var buttons = root.querySelectorAll("[data-switch]");
+    for (var i = 0; i < buttons.length; i++) {
+      var btn = buttons[i];
+      if (btn === master || btn.getAttribute("data-lock") === "true") continue;
+      btn.disabled = !allow;
+    }
+    promoSub.textContent = promo.getAttribute("aria-checked") === "true" ? promoOn : promoOff;
+  }
+
+  root.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-switch]");
+    if (!btn || !root.contains(btn) || btn.disabled) return;
+    if (btn.getAttribute("data-lock") === "true") return;
+    var next = btn.getAttribute("aria-checked") !== "true";
+    btn.setAttribute("aria-checked", next ? "true" : "false");
+    sync();
+  });
+
+  sync();
+})();
+</script>
+<style>
+#notify-settings {
+  color: light-dark(#1c1f24, #f3f5f7);
+  font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+}
+#notify-settings .vis-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+#notify-settings .phone {
+  width: min(100%, 392px);
+  margin-inline: auto;
+  background: light-dark(#f3f4f6, #101317);
+  border: 1px solid light-dark(#d5d9e0, #2a3038);
+  border-radius: 28px;
+  overflow: hidden;
+}
+#notify-settings .bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 52px;
+  padding: 8px 10px;
+  background: light-dark(#ffffff, #181c22);
+  border-bottom: 1px solid light-dark(#e4e7ec, #2a3038);
+}
+#notify-settings .bar h1 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+#notify-settings .back,
+#notify-settings .back-spacer {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: light-dark(#1c1f24, #f3f5f7);
+}
+#notify-settings .body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+}
+#notify-settings .group {
+  background: light-dark(#ffffff, #181c22);
+  border: 1px solid light-dark(#e4e7ec, #2a3038);
+  border-radius: 14px;
+  padding: 4px 14px 2px;
+}
+#notify-settings .group h2 {
+  margin: 10px 0 2px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: light-dark(#5d6772, #b7c0c8);
+}
+#notify-settings .row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid light-dark(#eceff3, #2a3038);
+}
+#notify-settings .group h2 + .row,
+#notify-settings .group > .row:first-child {
+  border-top: 0;
+}
+#notify-settings .copy {
+  flex: 1;
+  min-width: 0;
+}
+#notify-settings .title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+#notify-settings .sub,
+#notify-settings .foot,
+#notify-settings .banner {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: light-dark(#5d6772, #b7c0c8);
+}
+#notify-settings .foot {
+  margin: 0 0 12px;
+}
+#notify-settings .banner {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: light-dark(#eef6f3, #16302a);
+  color: light-dark(#145c48, #b7e2d4);
+}
+#notify-settings .switch {
+  flex: none;
+  width: 48px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+#notify-settings .switch:disabled {
+  cursor: default;
+}
+#notify-settings .switch:focus-visible {
+  outline: 2px solid light-dark(#0f6e56, #3dbe9a);
+  outline-offset: 2px;
+  border-radius: 16px;
+}
+#notify-settings .track {
+  display: block;
+  width: 46px;
+  height: 28px;
+  border-radius: 14px;
+  background: light-dark(#d5d8de, #3a414b);
+  position: relative;
+}
+#notify-settings .thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+}
+#notify-settings .switch[aria-checked="true"] .track {
+  background: light-dark(#0f6e56, #1f9d78);
+}
+#notify-settings .switch[aria-checked="true"] .thumb {
+  transform: translateX(18px);
+}
+#notify-settings .switch:disabled .track {
+  background: light-dark(#9bb8ae, #24584a);
+}
+@media (prefers-reduced-motion: no-preference) {
+  #notify-settings .thumb {
+    transition: transform 160ms ease;
+  }
+}
+</style>
+</body>
+</html>
